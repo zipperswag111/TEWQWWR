@@ -1,0 +1,35 @@
+name: LiveVault - Record TikTok LIVE
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'Public TikTok creator username (without @)'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: livevault-recorder
+  cancel-in-progress: false
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    steps:
+      - name: Checkout worker
+        uses: actions/checkout@v4
+      - name: Check FFmpeg
+        run: ffmpeg -version | head -n 1
+      - name: Capture public LIVE
+        env:
+          CREATOR: ${{ inputs.username }}
+        run: python3 scripts/record.py
+      - name: Upload captured video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: livevault-${{ github.run_id }}
+          path: recordings/*.mkv
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
